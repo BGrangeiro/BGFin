@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142c2c"><meta name="description" content="BGFIN: seus gastos, ganhos e contas fixas em um só lugar.">
+  <title>BGFIN — Controle financeiro</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="#overview" class="brand" aria-label="BGFIN, página inicial"><img src="/favicon.svg" width="38" height="38" alt=""><span>BGFIN</span></a>
+    <div class="workspace"><span class="avatar">P</span><div><strong>Minhas finanças</strong><span>Controle financeiro</span></div><span class="workspace-arrow">⌄</span></div>
+    <span class="nav-label">PRINCIPAL</span>
+    <nav aria-label="Navegação principal">
+      <a href="#overview" data-page="overview"><span data-icon="grid"></span>Visão geral</a>
+      <a href="#transactions" data-page="transactions"><span data-icon="arrows"></span>Movimentações</a>
+      <a href="#debts" data-page="debts" aria-label="Dívidas"><span data-icon="wallet"></span>Dívidas<span id="debt-count" class="nav-count"></span></a>
+      <a href="#bills" data-page="bills"><span data-icon="calendar"></span>Contas fixas<span id="bill-count" class="nav-count"></span></a>
+    </nav>
+      <section id="daily-verse" class="daily-verse" aria-label="Versículo do dia" aria-live="polite"><span data-icon="leaf"></span><div><h2>Versículo do dia</h2><p id="verse-text">Carregando versículo…</p><a id="verse-reference" target="_blank" rel="noopener noreferrer" hidden></a><small id="verse-source"></small></div></section>
+    <div class="sidebar-bottom"><a href="#settings" data-page="settings" class="settings-link"><span data-icon="database"></span>Dados e backup</a><div class="local-status"><i></i> Seu espaço local<span>v1.0</span></div></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div class="breadcrumb">Meu espaço <span>/</span> <strong id="breadcrumb">Visão geral</strong></div><div class="top-actions"><span class="saved-status"><i></i> Salvo neste computador</span><button class="icon-button" id="privacy" aria-label="Ocultar valores" title="Ocultar valores"><span data-icon="eye"></span></button><span class="avatar user-avatar">EU</span></div></header>
+    <main id="main">
+      <div class="page-heading"><div><h1 id="page-title">Visão geral<span>.</span></h1><p id="page-description">Entradas, saídas e contas do mês.</p></div><div class="heading-actions"><div class="month-switch"><button id="prev-month" class="icon-button" aria-label="Mês anterior">‹</button><label class="month-label"><span id="month-label"></span><input id="month" type="month" min="2026-09" max="2099-12" aria-label="Selecionar mês"></label><button id="next-month" class="icon-button" aria-label="Próximo mês">›</button></div><button class="button primary" id="new-transaction"><span data-icon="plus"></span>Novo lançamento</button></div></div>
+      <p id="period-label" class="period-label"></p>
+      <div id="load-error" role="alert" hidden></div>
+      <div id="content" aria-live="polite"><div class="loading">Carregando registros…</div></div>
+    </main>
+  </div>
+  <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
