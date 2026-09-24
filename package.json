@@ -1,8 +1,8 @@
 {
-  "name": "bgfin",
+  "name": "persona",
   "version": "1.0.0",
   "private": true,
-  "description": "Controle financeiro local com SQLite.",
+  "description": "Finanças, tarefas e anotações pessoais com SQLite local.",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
@@ -11,6 +11,6 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "check": "node --check server.js && node --check lib/database.js && node --check lib/verse.js && node --check public/app.js && node --check public/period.js"
+    "check": "node --check server.js && node --check lib/database.js && node --check lib/verse.js && node --check lib/quiz.js && node --check public/app.js && node --check lib/personal.js && node --check public/personal.js && node --check public/personal-library.js && node --check public/date-picker.js && node --check public/period.js && node --check lib/notes.js && node --check public/notes.js && node --check public/notes-model.js && node --check lib/investments.js && node --check public/investments.js && node --check public/investments-model.js && node --check public/debts-model.js"
   }
 }

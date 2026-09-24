@@ -2,35 +2,47 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#142c2c"><meta name="description" content="BGFIN: seus gastos, ganhos e contas fixas em um só lugar.">
-  <title>BGFIN — Controle financeiro</title>
+  <meta name="theme-color" content="#382451"><meta name="description" content="Persona: suas finanças, tarefas e ideias em um só lugar. Seu espaço pessoal e local.">
+  <title>Persona</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/notes.css">
+  <link rel="stylesheet" href="/investments.css">
+  <link rel="stylesheet" href="/responsive.css">
+  <link rel="stylesheet" href="/debts.css">
   <script src="/app.js" type="module"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a href="#overview" class="brand" aria-label="BGFIN, página inicial"><img src="/favicon.svg" width="38" height="38" alt=""><span>BGFIN</span></a>
-    <div class="workspace"><span class="avatar">P</span><div><strong>Minhas finanças</strong><span>Controle financeiro</span></div><span class="workspace-arrow">⌄</span></div>
-    <span class="nav-label">PRINCIPAL</span>
+    <a href="#overview" class="brand" aria-label="Persona, página inicial"><span>Persona</span></a>
+    <span class="nav-label">MEU DIA A DIA</span>
     <nav aria-label="Navegação principal">
       <a href="#overview" data-page="overview"><span data-icon="grid"></span>Visão geral</a>
       <a href="#transactions" data-page="transactions"><span data-icon="arrows"></span>Movimentações</a>
       <a href="#debts" data-page="debts" aria-label="Dívidas"><span data-icon="wallet"></span>Dívidas<span id="debt-count" class="nav-count"></span></a>
       <a href="#bills" data-page="bills"><span data-icon="calendar"></span>Contas fixas<span id="bill-count" class="nav-count"></span></a>
+      <a href="#investments" data-page="investments" aria-label="Investimentos"><span data-icon="up"></span>Investimentos<span id="investment-count" class="nav-count"></span></a>
+      <a href="#personal" data-page="personal"><span data-icon="heart"></span>Pessoal</a>
+      <a href="#notes" data-page="notes" class="notes-nav"><span data-icon="notebook"></span>Anotações</a>
     </nav>
-      <section id="daily-verse" class="daily-verse" aria-label="Versículo do dia" aria-live="polite"><span data-icon="leaf"></span><div><h2>Versículo do dia</h2><p id="verse-text">Carregando versículo…</p><a id="verse-reference" target="_blank" rel="noopener noreferrer" hidden></a><small id="verse-source"></small></div></section>
+      <section id="daily-verse" class="daily-verse learning-quiz" aria-label="Pausa para aprender"><div><h2>Pausa para aprender</h2><small>Perguntas em inglês · conhecimentos gerais</small><div id="quiz-content" aria-live="polite"><p>Carregando pergunta…</p></div><button type="button" id="quiz-next" class="quiz-next">Outra pergunta</button><small><a href="https://opentdb.com" target="_blank" rel="noopener noreferrer">Open Trivia DB</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></small></div></section>
     <div class="sidebar-bottom"><a href="#settings" data-page="settings" class="settings-link"><span data-icon="database"></span>Dados e backup</a><div class="local-status"><i></i> Seu espaço local<span>v1.0</span></div></div>
   </aside>
   <div class="app-shell">
-    <header class="topbar"><div class="breadcrumb">Meu espaço <span>/</span> <strong id="breadcrumb">Visão geral</strong></div><div class="top-actions"><span class="saved-status"><i></i> Salvo neste computador</span><button class="icon-button" id="privacy" aria-label="Ocultar valores" title="Ocultar valores"><span data-icon="eye"></span></button><span class="avatar user-avatar">EU</span></div></header>
+    <header class="topbar"><div class="breadcrumb">Persona <span>/</span> <strong id="breadcrumb">Visão geral</strong></div><div class="top-actions"><span class="saved-status"><i></i> Salvo neste computador</span><button class="icon-button" id="privacy" aria-label="Ocultar valores" title="Ocultar valores"><span data-icon="eye"></span></button><span class="avatar user-avatar">EU</span></div></header>
     <main id="main">
+      <div class="workspace-tabs" aria-label="Áreas da plataforma"><a href="#overview" data-workspace="finance"><span data-icon="wallet"></span>Finanças</a><a href="#investments" data-workspace="investments"><span data-icon="up"></span>Investimentos</a><a href="#notes" data-workspace="notes"><span data-icon="notebook"></span>Anotações</a><a href="#personal" data-workspace="personal"><span data-icon="heart"></span>Pessoal</a></div>
       <div class="page-heading"><div><h1 id="page-title">Visão geral<span>.</span></h1><p id="page-description">Entradas, saídas e contas do mês.</p></div><div class="heading-actions"><div class="month-switch"><button id="prev-month" class="icon-button" aria-label="Mês anterior">‹</button><label class="month-label"><span id="month-label"></span><input id="month" type="month" min="2026-09" max="2099-12" aria-label="Selecionar mês"></label><button id="next-month" class="icon-button" aria-label="Próximo mês">›</button></div><button class="button primary" id="new-transaction"><span data-icon="plus"></span>Novo lançamento</button></div></div>
       <p id="period-label" class="period-label"></p>
+      <div id="investments-heading-actions" hidden><button class="button primary" data-investment-action="new"><span data-icon="plus"></span>Adicionar investimento</button></div>
+      <div id="notes-heading-actions" class="notes-heading-actions" hidden><button class="button secondary" data-note-action="new-note"><span data-icon="notebook"></span>Nova anotação</button><button class="button secondary" data-note-action="new-reminder"><span data-icon="bell"></span>Novo lembrete</button><button class="button primary" data-note-action="new-task"><span data-icon="plus"></span>Nova tarefa</button></div>
       <div id="load-error" role="alert" hidden></div>
       <div id="content" aria-live="polite"><div class="loading">Carregando registros…</div></div>
     </main>
   </div>
   <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  <dialog id="notes-modal" aria-labelledby="notes-modal-title"><div id="notes-modal-content"></div></dialog>
+  <dialog id="investments-modal" aria-labelledby="investments-modal-title"><div id="investments-modal-content"></div></dialog>
+  <dialog id="personal-modal" aria-labelledby="personal-modal-title"></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>
