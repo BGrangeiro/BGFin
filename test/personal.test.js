@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openDatabase } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -48,14 +48,14 @@ test('Pessoal: rejeita ordens incompletas, duplicadas ou inválidas sem alterar 
 });
 test('Pessoal: backup completo e legado, validação atômica',t=>{
   const s=fixture(t);s.personal.add(record(s.personal.list().tabs[0].id));
-  const backup=s.exportData();assert.equal(backup.version,8);
+  const backup=s.exportData();assert.equal(backup.version,12);
   s.personal.addTab({name:'Saúde'});s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
   const invalid=structuredClone(backup);invalid.personal.items[0].tab_id=999;assert.throws(()=>s.restoreData(invalid));assert.deepEqual(s.personal.list(),backup.personal);
   const old={...backup,version:5};delete old.personal;s.restoreData(old);assert.deepEqual(s.personal.list(),backup.personal);
   const empty=structuredClone(backup);empty.personal.items=[];s.restoreData(empty);assert.equal(s.personal.list().items.length,0);
 });
 test('Pessoal: API CRUD e arquivos disponíveis',async t=>{
-  const {server}=createApp({databasePath:':memory:'});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
+  const {server,fetch}=createApp({databasePath:':memory:'});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
   const base=`http://127.0.0.1:${server.address().port}`;
   const call=async(path,method='GET',body)=>{const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};};
   const initial=await call('/api/personal');assert.equal(initial.status,200);

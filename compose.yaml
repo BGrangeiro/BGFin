@@ -1,0 +1,86 @@
+name: persona
+
+x-runtime: &runtime
+  image: persona:local
+  build: .
+  restart: unless-stopped
+  init: true
+  read_only: true
+  user: "1000:1000"
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp:size=64m,mode=1777"]
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  app:
+    <<: *runtime
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      PUBLIC_ORIGIN: https://${DOMAIN:?Configure DOMAIN no arquivo .env}
+      TRUST_PROXY: "1"
+      DB_PATH: /app/data/saldo.sqlite
+      AUTH_ACCOUNTS_FILE: /run/persona-secrets/accounts.json
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-6}
+      BACKUP_KEEP: ${BACKUP_KEEP:-120}
+    volumes:
+      - ./data:/app/data
+      - ./backups:/backups
+      - ./secrets:/run/persona-secrets:ro
+    stop_grace_period: 30s
+
+  backup:
+    <<: *runtime
+    command: ["node", "scripts/backup.js", "--watch"]
+    network_mode: none
+    environment:
+      DB_PATH: /app/data/saldo.sqlite
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-6}
+      BACKUP_KEEP: ${BACKUP_KEEP:-120}
+    volumes:
+      - ./data:/app/data
+      - ./backups:/backups
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "scripts/backup.js", "--check"]
+      interval: 1h
+      timeout: 10s
+      start_period: 1m
+      retries: 1
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Configure DOMAIN no arquivo .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Configure ACME_EMAIL no arquivo .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy_data:
+  caddy_config:

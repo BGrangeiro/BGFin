@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createQuiz} from '../lib/quiz.js';
-import {createApp} from '../server.js';
+import {createApp} from '../support/http-fixture.js';
 const result={response_code:0,results:[{question:'What%20is%202%2B2%3F',category:'Math',correct_answer:'4',incorrect_answers:['1','2','3']}]};
 test('quiz decodes answers, caches and shares concurrent requests',async()=>{
   let calls=0,time=0;
@@ -19,7 +19,7 @@ test('quiz handles rate limits and invalid content, retrying after cooldown',asy
   const quiz=createQuiz({fetchImpl:async()=>{throw new Error('offline');}});assert.equal((await quiz()).unavailable,true);
 });
 test('quiz endpoint serves questions through local backend',async t=>{
-  const {server}=createApp({databasePath:':memory:',quiz:async()=>({questions:['sample']})});
+  const {server,fetch}=createApp({databasePath:':memory:',quiz:async()=>({questions:['sample']})});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
   const response=await fetch(`http://127.0.0.1:${server.address().port}/api/quiz`);assert.equal(response.status,200);assert.deepEqual(await response.json(),{questions:['sample']});
 });

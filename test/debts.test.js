@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { openDatabase } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
@@ -79,7 +79,7 @@ test('migração de banco antigo preserva registros e cria vínculos de dívida'
   }
 });
 test('API de dívidas: cadastro, edição, pagamento, backup e exclusão',async t=>{
-  const {server}=createApp({databasePath:':memory:',dailyVerse:async()=>({text:'Versículo de teste'})});
+  const {server,fetch}=createApp({databasePath:':memory:',dailyVerse:async()=>({text:'Versículo de teste'})});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const base=`http://127.0.0.1:${server.address().port}`;

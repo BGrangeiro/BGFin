@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
 import { openDatabase } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 import { installmentSchedule, installmentProgress, paidBeforeToday } from '../public/debts-model.js';
 
 const debt = extra => ({ description:'Notebook', amount:120000, category:'Compras', debt_type:'installment',
@@ -96,7 +96,7 @@ test('dívida fixa dispensa parcelas; valida tipo, datas e cor; backup preserva 
   assert.equal(fixed.due_date,null);
   for(const extra of [{debt_type:'bad'},{color:'red'},{color:'#fff; color:red'},{first_installment_date:null,last_installment_date:null}])assert.throws(()=>store.addDebt(debt(extra)));
   const backup=store.exportData();
-  assert.equal(backup.version,8);
+  assert.equal(backup.version,12);
   store.restoreData(backup);
   assert.equal(store.listDebts().find(item=>item.id===d.id).color,'#cb748c');
   assert.equal(store.listDebts().find(item=>item.id===d.id).installments_remaining,4);
@@ -127,7 +127,7 @@ test('migração v7 preserva parcelas, saldos e cores padrão ao reabrir', () =>
     assert.equal(store.list('2026-09').monthlyDebts[0].scheduled,10000);
     store.payDebt(1,{amount:10000,date:'2026-09-24'});
     store.close();store=openDatabase(file);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,8);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
     assert.equal(store.listDebts()[0].remaining,10000);
     assert.equal(store.listDebts()[0].payments.length,1);
   } finally {
@@ -138,7 +138,7 @@ test('migração v7 preserva parcelas, saldos e cores padrão ao reabrir', () =>
 });
 
 test('API retorna cálculos e recursos do formulário e preserva edição e restauração', async t => {
-  const {server}=createApp({databasePath:':memory:'});
+  const {server,fetch}=createApp({databasePath:':memory:'});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const base=`http://127.0.0.1:${server.address().port}`;

@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
 import { openDatabase } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 import { overdue, dueReminder, matchesPeriod, sortNotes, localDay, localMinute } from '../public/notes-model.js';
 
 const note = (extra = {}) => ({ title: 'Preparar projeto', content: 'Referências\nPróximos passos', kind: 'task', status: 'todo', priority: 'high', category: 'Pessoal', scheduled_date: '2026-09-22', due_date: '2026-09-25', reminder_at: '2026-09-22T15:30', checklist: [{ text: 'Pesquisar', done: false }], pinned: true, ...extra });
@@ -57,7 +57,7 @@ test('backup atual restaura anotações e rejeita corrupção antes de substitui
   store.addTransaction({ description: 'Entrada existente', type: 'income', amount: 1000, date: '2026-09-22', category: 'Outros' });
   store.notes.add(note({ status: 'done' }));
   const backup = store.exportData();
-  assert.equal(backup.version, 8);
+  assert.equal(backup.version,12);
   store.notes.add(note({ title: 'Temporária' }));
   store.restoreData(backup);
   assert.deepEqual(store.notes.list(), backup.notes);
@@ -96,7 +96,7 @@ test('migração v3 e reabertura preservam finanças, anotações e checklists',
     const n = store.notes.add(note()); store.close();
     store = openDatabase(filename);
     assert.deepEqual(store.notes.list(), [n]);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 8);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
   } finally {
     store?.close();
     const child = relative(tmpdir(), dir);
@@ -106,7 +106,7 @@ test('migração v3 e reabertura preservam finanças, anotações e checklists',
 });
 
 test('API de anotações: CRUD, backup, validação, recursos estáticos e origem local', async t => {
-  const { server } = createApp({ databasePath: ':memory:' });
+  const {server,fetch}=createApp({ databasePath: ':memory:' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;

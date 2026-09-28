@@ -54,7 +54,7 @@ test('parcelas respeitam início, vencimento, edição e backup',t=>{
   assert.equal(store.list('2026-10').monthlyDebts[0].due_date,'2026-11-10');
   store.updateDebt(d.id,debt({installment_amount:8000,installment_day:31}));
   const backup=store.exportData();
-  assert.equal(backup.version, 8);
+  assert.equal(backup.version,12);
   store.restoreData(backup);
   assert.equal(store.list('2026-09').monthlyDebts[0].scheduled,8000);
   assert.equal(store.list('2026-09').monthlyDebts[0].due_date,'2026-09-30');

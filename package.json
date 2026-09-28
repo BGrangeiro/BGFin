@@ -11,6 +11,10 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "check": "node --check server.js && node --check lib/database.js && node --check lib/verse.js && node --check lib/quiz.js && node --check public/app.js && node --check lib/personal.js && node --check public/personal.js && node --check public/personal-library.js && node --check public/date-picker.js && node --check public/period.js && node --check lib/notes.js && node --check public/notes.js && node --check public/notes-model.js && node --check lib/investments.js && node --check public/investments.js && node --check public/investments-model.js && node --check public/debts-model.js"
+    "check": "node --check server.js && node --check lib/database.js && node --check lib/verse.js && node --check lib/quiz.js && node --check public/app.js && node --check lib/personal.js && node --check public/personal.js && node --check public/personal-library.js && node --check public/date-picker.js && node --check public/period.js && node --check lib/notes.js && node --check public/notes.js && node --check public/notes-model.js && node --check lib/investments.js && node --check public/investments.js && node --check public/investments-model.js && node --check public/debts-model.js && node --check lib/preferences.js && node --check lib/fitness.js && node --check public/navigation.js && node --check public/fitness.js && node --check public/fitness-model.js && node --check lib/studies.js && node --check public/study-model.js && node --check public/study-reviews.js && node --check lib/schedule.js && node --check public/schedule-model.js && node --check public/schedule.js && node --check lib/auth.js && node --check lib/auth-accounts.js && node --check public/login.js && node --check lib/config.js && node --check lib/data-paths.js && node --check lib/backups.js && node --check lib/restore.js && node --check scripts/backup.js && node --check scripts/restore.js && node --check scripts/accounts.js && node --check scripts/init-accounts.js && node --check scripts/package-vps.js && node --check scripts/healthcheck.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
+    "accounts": "node scripts/accounts.js",
+    "package:vps": "node scripts/package-vps.js"
   }
 }

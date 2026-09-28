@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { openDatabase, AppError } from '../lib/database.js';
 import { createPersonalStore } from '../lib/personal.js';
 import { matchesLibrarySearch } from '../public/personal-library.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 const setup=t=>{const store=openDatabase(':memory:');t.after(()=>store.close());return store;};
 const tab=(store,layout)=>store.personal.list().tabs.find(t=>t.layout===layout).id;
 test('estudos aceitam prazo indefinido, alternam para data e preservam no backup',t=>{
@@ -47,12 +47,12 @@ test('backup v7 restaura pastas, estudos, estado assistido e resenhas; rejeita v
   const s=setup(t),movies=tab(s,'movies'),studies=tab(s,'studies');const f=s.personal.addFolder({tab_id:movies,name:'Terror'});
   s.personal.add({tab_id:movies,title:'Filme',watched:true,review:'Muito bom',folder_id:f.id});
   s.personal.add({tab_id:studies,title:'Estudo',start_date:'2026-10-01',due_date:'2026-10-02',links:['https://example.org']});
-  const backup=s.exportData();assert.equal(backup.version,8);s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
+  const backup=s.exportData();assert.equal(backup.version,12);s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
   const bad=structuredClone(backup);bad.personal.items.find(i=>i.tab_id===studies).folder_id=f.id;assert.throws(()=>s.restoreData(bad));assert.deepEqual(s.personal.list(),backup.personal);
   const old=structuredClone(backup);old.version=6;delete old.personal.folders;for(const t of old.personal.tabs)delete t.layout;for(const i of old.personal.items){delete i.folder_id;delete i.watched;delete i.review;delete i.start_date;delete i.links;}s.restoreData(old);assert.equal(s.personal.list().items.length,2);assert.equal(s.personal.list().tabs.find(t=>t.id===movies).layout,'movies');
 });
 test('API de pastas e atualizações diretas do cartão preservam outros campos',async t=>{
-  const {server,store}=createApp({databasePath:':memory:'});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
+  const {server,store,fetch}=createApp({databasePath:':memory:'});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
   const base=`http://127.0.0.1:${server.address().port}`;
   const call=async(path,method,body)=>{const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
   const id=tab(store,'movies');const folder=await call('/api/personal/folders','POST',{tab_id:id,name:'Ação'});assert.equal(folder.status,201);

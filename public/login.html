@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172b46">
+  <title>Entrar · Persona</title>
+  <link rel="icon" href="/favicon.svg?v=person" type="image/svg+xml">
+  <link rel="stylesheet" href="/login.css">
+  <script src="/login.js" type="module"></script>
+</head>
+<body>
+  <main class="login-card">
+    <header><img src="/favicon.svg" width="48" height="48" alt=""><span>Persona</span></header>
+    <h1>Entrar</h1>
+    <form id="login-form" method="post" action="/api/auth/login">
+      <label for="username">Usuário</label>
+      <input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="128" required autofocus>
+      <label for="password">Senha</label>
+      <div class="password-field">
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required aria-describedby="login-hint">
+        <button id="toggle-password" type="button" aria-controls="password" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button>
+      </div>
+      <p id="login-hint">Maiúsculas e minúsculas são aceitas em ambos os campos.</p>
+      <p id="login-error" role="alert" hidden></p>
+      <button class="submit" type="submit">Entrar</button>
+    </form>
+    <noscript>Ative o JavaScript do navegador para entrar.</noscript>
+  </main>
+</body>
+</html>

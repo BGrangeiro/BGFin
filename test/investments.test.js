@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
 import { openDatabase } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 import { investmentAlerts, localDate } from '../public/investments-model.js';
 
 const investment = (overrides = {}) => ({ name: 'Minha reserva', type: 'fixed', institution: 'Banco teste', start_date: '2020-01-01', initial_amount: 100000, liquidity: 'Diária', review_date: '2026-10-01', maturity_date: '2027-12-31', notes: 'Objetivo: reserva\n100% do CDI', ...overrides });
@@ -73,7 +73,7 @@ test('backup v5 valida carteira antes de restaurar, recalcula totais e reverte f
   const store = fixture(t), api = store.investments, i = api.add(investment());
   api.addEntry(i.id, entry('gain', 1234));
   const original = store.exportData();
-  assert.equal(original.version, 8);
+  assert.equal(original.version,12);
   api.remove(i.id); store.restoreData(original);
   assert.deepEqual(api.list(), original.investments);
   const badVariants = [
@@ -116,7 +116,7 @@ test('migração v4 e reabertura mantêm finanças, notas e histórico de invest
     store = openDatabase(path);
     assert.equal(store.list('2026-09').totals.income, 500);
     assert.deepEqual(store.investments.get(i.id), expected);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 8);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
   } finally {
     store?.close();
     const rel = relative(tmpdir(), dir); assert.ok(rel && !rel.startsWith('..') && !isAbsolute(rel)); rmSync(dir, { recursive: true, force: true });
@@ -131,7 +131,7 @@ test('alertas incluem vencidos, hoje e próximos sete dias e ignoram encerrados'
 });
 
 test('API de investimentos: CRUD completo, validação, backup, recursos estáticos e proteção de origem', async t => {
-  const { server } = createApp({ databasePath: ':memory:' });
+  const {server,fetch}=createApp({ databasePath: ':memory:' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;
   const send = (path, method, data, headers = {}) => fetch(base + path, { method, headers: { 'Content-Type': 'application/json', ...headers }, ...(data ? { body: JSON.stringify(data) } : {}) });

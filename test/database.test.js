@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
 import { openDatabase, dueDate } from '../lib/database.js';
-import { createApp } from '../server.js';
+import { createApp } from '../support/http-fixture.js';
 
 const transaction = (overrides = {}) => ({ description: 'Mercado', type: 'expense', amount: 12345, category: 'Alimentação', date: '2026-09-20', ...overrides });
 const bill = (overrides = {}) => ({ description: 'Internet', amount: 9990, category: 'Moradia', due_day: 31, start_month: '2026-09', ...overrides });
@@ -107,7 +107,7 @@ test('os registros persistem após fechar e reabrir o SQLite', () => {
 });
 
 test('API HTTP: CRUD, validação, restauração, cabeçalhos e bloqueio de origem externa', async t => {
-  const { server } = createApp({ databasePath: ':memory:' });
+  const {server,fetch}=createApp({ databasePath: ':memory:' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;

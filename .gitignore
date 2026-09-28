@@ -11,3 +11,6 @@ data/
 .sites-runtime/
 coverage/
 test-results/
+backups/
+secrets/
+dist/

@@ -1,6 +1,6 @@
 # Persona
 
-Um espaço pessoal de finanças, tarefas e anotações, com interface em português, paleta roxa e banco de dados SQLite. Funciona localmente, sem cadastro ou dependências de npm. O quiz de aprendizagem consulta um serviço público externo; suas finanças e anotações permanecem no computador.
+Um espaço pessoal de finanças, tarefas e anotações, com interface em português, paleta roxa e banco de dados SQLite. Funciona localmente, com login e sem dependências de npm. O quiz de aprendizagem consulta um serviço público externo; suas finanças e anotações permanecem no computador.
 
 ## Executar
 
@@ -13,6 +13,19 @@ npm start
 Abra **http://127.0.0.1:3000**. No Windows, você também pode dar dois cliques em **iniciar.bat**. Mantenha a janela do servidor aberta durante o uso; `Ctrl+C` encerra o servidor.
 
 Não é necessário executar `npm install`. Para desenvolvimento com reinício automático do servidor: `npm run dev`. Atualize o navegador após editar os arquivos da interface.
+
+## Login e contas
+
+- A tela inicial pede usuário e senha. Apenas **Bruno** e **Ana** estão habilitados, com as senhas definidas pelo proprietário. Usuário e senha ignoram maiúsculas/minúsculas; não há cadastro público.
+- **Bruno** mantém todos os registros anteriores no arquivo `data/saldo.sqlite`. **Ana** começa sem registros no arquivo `data/saldo-ana.sqlite`. As abas padrão são criadas para cada conta; dados e preferências ficam separados.
+- Ao personalizar `DB_PATH`, esse caminho continua sendo o banco de Bruno. O banco de Ana fica na mesma pasta, com o sufixo `-ana` antes da extensão.
+- Todas as APIs de dados, incluindo backup e restauração, exigem uma sessão válida e trabalham somente no banco da conta conectada. Um backup exportado contém apenas os dados dessa conta; restaurá-lo substitui apenas os registros dela.
+- **Sair** encerra a sessão. Ela também expira após 12 horas ou ao reiniciar o servidor. No mesmo navegador, trocar de conta vale para todas as abas; abas antigas são atualizadas ao receber foco e não podem gravar na conta diferente.
+- Senhas são verificadas no servidor com scrypt e salt individual; o repositório contém apenas os hashes. O navegador recebe um cookie de sessão HttpOnly e SameSite=Strict. Dez tentativas inválidas bloqueiam novas tentativas por até 15 minutos.
+
+## Hospedar em uma VPS
+
+Consulte [VPS.md](VPS.md) para instalar com Docker Compose, HTTPS automático, bancos persistentes e backups a cada 6 horas. Gere o pacote com o código e os dados atuais usando `npm run package:vps`; o arquivo fica em `dist/`.
 
 ## Recursos
 
@@ -90,7 +103,7 @@ O servidor busca 20 perguntas e mantém o lote em cache por dez minutos. Ao term
 
 ## Dados e backup
 
-O banco é criado automaticamente em `data/saldo.sqlite`. Os arquivos auxiliares `-wal` e `-shm` podem existir enquanto o servidor está aberto.
+Os bancos são criados automaticamente em `data/saldo.sqlite` (Bruno) e `data/saldo-ana.sqlite` (Ana). Os arquivos auxiliares `-wal` e `-shm` podem existir enquanto o servidor está aberto.
 
 Use **Dados e backup → Baixar backup** para guardar ou transferir os dados. A restauração substitui os registros atuais somente após validar o arquivo inteiro. Guarde uma cópia antes de restaurar. Para copiar o SQLite manualmente, encerre o servidor antes; não copie apenas o arquivo principal enquanto houver gravações em andamento.
 
@@ -130,7 +143,15 @@ Variáveis de ambiente:
 | Variável | Padrão | Finalidade |
 | --- | --- | --- |
 | `PORT` | `3000` | Porta do servidor local |
-| `DB_PATH` | `data/saldo.sqlite` | Caminho do banco; prefira um caminho absoluto |
+| `DB_PATH` | `data/saldo.sqlite` | Banco de Bruno; Ana usa o sufixo `-ana`; prefira um caminho absoluto |
+| `HOST` | `127.0.0.1` | Endereço de escuta; Compose usa `0.0.0.0` na rede privada |
+| `PUBLIC_ORIGIN` | vazio (somente local) | Origem externa exata; HTTPS obrigatório em produção |
+| `NODE_ENV` | desenvolvimento | `production` valida a configuração HTTPS |
+| `TRUST_PROXY` | `0` | `1` apenas atrás do proxy privado configurado |
+| `AUTH_ACCOUNTS_FILE` | hashes locais | Arquivo JSON privado das contas |
+| `BACKUP_DIR` | `backups` | Pasta das cópias SQLite verificadas |
+| `BACKUP_INTERVAL_HOURS` | `6` | Intervalo do serviço de backups |
+| `BACKUP_KEEP` | `120` | Quantidade de cópias completas mantidas |
 
 Exemplo no PowerShell:
 
@@ -139,14 +160,11 @@ $env:PORT = '3001'
 npm start
 ```
 
-## GitHub e publicação futura
+## GitHub e VPS
 
-Este projeto está preparado para versionamento no GitHub, mas **GitHub Pages não executa o servidor Node.js ou o banco SQLite**. Para publicar o sistema, será necessário um servidor com Node.js e armazenamento persistente, ou adaptar a camada de persistência para um banco gerenciado.
+O código pode ficar no GitHub, mas GitHub Pages não executa o servidor Node.js/SQLite. O projeto inclui `Dockerfile`, `compose.yaml`, Caddy e scripts de instalação, backup, restauração e empacotamento. As instruções completas estão em [VPS.md](VPS.md).
 
-A versão atual escuta apenas em `127.0.0.1`, aceita hosts locais e bloqueia requisições vindas de outra origem. Não possui login: é uma ferramenta para uso pessoal neste computador. Antes de expor na internet, implemente autenticação, isolamento de dados por usuário se necessário, HTTPS, configuração explícita de hosts/origens e backups automáticos. Não basta mudar o endereço de escuta para tornar esta versão adequada a acesso público.
-
-Para colocar o código no GitHub, crie um repositório e siga as instruções do GitHub para enviar esta pasta. Nenhum repositório remoto foi criado ou publicado automaticamente.
-
+No uso local, o servidor continua restrito a endereços locais. Na VPS, configure o domínio HTTPS; os cookies recebem `Secure`, o servidor valida host/origem e os dados de cada usuário ficam em arquivos persistentes separados. Bancos, backups, contas privadas e pacotes de transferência são ignorados pelo Git e excluídos da imagem Docker.
 
 ## Atualização: períodos e parcelas
 
@@ -156,7 +174,7 @@ Dívidas abre em **Dívidas totais**, com opção de **Dívidas do mês**. As da
 
 Novo lançamento abre com Entrada selecionada. A categoria aceita texto livre e o botão + permite escolher as categorias existentes, incluindo as personalizadas já usadas. Últimas movimentações aparece primeiro; os gráficos de pizza ficam no fim. O quiz aparece abaixo de Contas fixas no menu em telas grandes e abaixo dos vencimentos na visão geral em telas menores.
 
-O backup atual é versão 8 e inclui tipo, cor e datas das dívidas, além de parcelas, tarefas, lembretes, anotações, checklists, investimentos com histórico e todas as abas de Pessoal. A versão 6 também substitui Pessoal na restauração; versões anteriores preservam essa área. A restauração de um v5 substitui essas áreas em uma única transação, depois de validar tudo. Um v4 substitui finanças e anotações, preservando investimentos. As versões 1, 2 e 3 substituem apenas os dados financeiros, preservando anotações e investimentos atuais. A atualização do banco mantém os registros existentes.
+O backup atual é versão 12 e inclui a ordem das abas principais, treinos, alimentação, tipo, cor e datas das dívidas, além de parcelas, tarefas, lembretes, anotações, checklists, investimentos com histórico e todas as abas de Pessoal. A versão 6 também substitui Pessoal na restauração; versões anteriores preservam essa área. A restauração de um v5 substitui essas áreas em uma única transação, depois de validar tudo. Um v4 substitui finanças e anotações, preservando investimentos. As versões 1, 2 e 3 substituem apenas os dados financeiros, preservando anotações e investimentos atuais. A atualização do banco mantém os registros existentes.
 
 ## Espaço Pessoal
 
@@ -186,3 +204,31 @@ Os dados ficam no SQLite local (`personal_tabs` e `personal_items`). O backup ve
 - Valores são distribuídos em centavos, com diferença máxima de R$ 0,01 entre parcelas quando o total não divide igualmente.
 - Escolha uma cor personalizada ou uma das sugestões. Ela aparece em uma faixa fina nos cartões das duas visões de dívidas e é preservada ao editar e restaurar o backup.
 - Dívidas existentes mantêm os valores e pagamentos. Ao editar uma parcelada antiga, confira as datas sugeridas antes de salvar. Backups das versões 1 a 7 continuam aceitos.
+
+## Navegação e treino / alimentação
+
+- Arraste as abas no menu principal ou nas áreas superiores para reorganizá-las. A ordem de cada menu é salva no SQLite e incluída no backup. Também é possível usar Alt + setas com a aba focada. Soltar fora do menu ou pressionar Escape cancela o arraste.
+- O ícone de Pessoal e o ícone da aba do navegador usam a mesma silhueta de pessoa. Os slogans foram removidos dos cabeçalhos, formulários e estados vazios.
+- Em **Pessoal → Treino e alimentação**, **Treinos** mostra uma semana de segunda a domingo. Cadastre o nome, dia e quantos exercícios precisar, com séries, repetições ou tempo, carga, observações e link de vídeo por exercício. Os vídeos abrem em outra aba.
+- Marque **Fui** para registrar presença. Arraste pela alça do treino para outro dia da semana; clique nela para escolher qualquer data. Alt + seta esquerda/direita move um dia. O treino mantém os exercícios e a presença ao ser movido.
+- **Alimentação** registra a refeição, data, horário opcional e texto livre com os alimentos e quantidades. Não há cálculo de calorias. É possível editar e excluir os registros.
+- Treinos e refeições usam os registros de Pessoal, sem movimentações financeiras. Treinos pendentes entram na agenda da Visão geral.
+- O backup v9 salva os novos registros e a ordem das abas. Backups anteriores continuam aceitos e preservam as preferências de navegação atuais. Ao restaurar Pessoal de um backup anterior sem a nova aba, Treino e alimentação é adicionada vazia.
+
+## Revisões de Estudos
+
+- O cadastro de um estudo começa sem data de estudo realizado. Use **Estudei agora** ou preencha **Estudado em** para iniciar os prazos de 24 horas, 7 dias, 30 dias, 6 meses, 1 ano e 3 anos, contados desde o estudo inicial.
+- O botão **+** no cartão abre **Adicionar pergunta**, **Revisar conteúdo** e os seis períodos. As perguntas são cadastradas e editadas nessa janela, sem limite de quantidade e com respostas opcionais.
+- Clique em qualquer período para escrever suas anotações e escolher **A fazer**, **Pulada** ou **Concluída**. As anotações são independentes e aparecem ao revisar o período, junto das observações gerais e perguntas com respostas ocultas. Clique para mostrar ou ocultar cada resposta.
+- Pular retira o período da fila pendente sem contá-lo como concluído. Voltar a **A fazer** o reabre. As outras datas e anotações são mantidas, inclusive ao revisar fora de ordem. É possível preparar anotações antes de iniciar o estudo.
+- Mudar a data do estudo reinicia as situações das revisões, preservando perguntas e anotações por período. As revisões vencidas e a fazer aparecem na Visão geral.
+- O backup v11 salva perguntas, respostas e a situação, anotação e conclusão de cada período. Backups anteriores continuam aceitos; conclusões antigas são convertidas sem perder o progresso.
+
+## Cronograma diário
+
+- Em **Pessoal → Cronograma**, escolha a data ou um dia da semana e use **Adicionar horário**. Cada cartão tem atividade, início, término, cor e observações. Os horários precisam terminar no mesmo dia.
+- Escolha **Só nesta data** para uma alteração pontual ou o dia da semana em **Aplicar em** para definir o padrão. A visão **Padrão semanal** edita os compromissos que se repetem; **Meu dia** mostra o resultado para a data selecionada.
+- Uma alteração pontual salva uma versão independente do dia inteiro. Os demais dias continuam usando o padrão; futuras mudanças do padrão preservam os dias personalizados. Um ícone discreto aparece no dia e nos cartões diferentes do padrão. **Restaurar padrão** remove a exceção daquela data. Um dia vazio também pode ser uma exceção.
+- Só aparecem os horários cadastrados, sempre em ordem de início (inclusive depois de editar). Use **Adicionar horário** para criar um intervalo específico e o botão **−** ao final do cartão para **Editar** ou **Excluir**, escolhendo entre só a data ou o padrão semanal.
+- Arraste pela alça de um cartão até outro para trocar seus intervalos; cor, título e observações são preservados. Alt + seta para cima/baixo também troca com o cartão vizinho, e clicar na alça permite editar o horário. Escape ou soltar fora cancela o arraste.
+- Padrões, exceções e cores ficam no SQLite e no backup v12. Backups anteriores continuam aceitos; a nova aba é criada vazia ao migrar. Alterações concorrentes de outra janela são detectadas antes de sobrescrever o cronograma.
