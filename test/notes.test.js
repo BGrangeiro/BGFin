@@ -57,7 +57,7 @@ test('backup atual restaura anotações e rejeita corrupção antes de substitui
   store.addTransaction({ description: 'Entrada existente', type: 'income', amount: 1000, date: '2026-09-22', category: 'Outros' });
   store.notes.add(note({ status: 'done' }));
   const backup = store.exportData();
-  assert.equal(backup.version,12);
+  assert.equal(backup.version,14);
   store.notes.add(note({ title: 'Temporária' }));
   store.restoreData(backup);
   assert.deepEqual(store.notes.list(), backup.notes);
@@ -96,7 +96,7 @@ test('migração v3 e reabertura preservam finanças, anotações e checklists',
     const n = store.notes.add(note()); store.close();
     store = openDatabase(filename);
     assert.deepEqual(store.notes.list(), [n]);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,14);
   } finally {
     store?.close();
     const child = relative(tmpdir(), dir);

@@ -96,7 +96,7 @@ test('dívida fixa dispensa parcelas; valida tipo, datas e cor; backup preserva 
   assert.equal(fixed.due_date,null);
   for(const extra of [{debt_type:'bad'},{color:'red'},{color:'#fff; color:red'},{first_installment_date:null,last_installment_date:null}])assert.throws(()=>store.addDebt(debt(extra)));
   const backup=store.exportData();
-  assert.equal(backup.version,12);
+  assert.equal(backup.version,14);
   store.restoreData(backup);
   assert.equal(store.listDebts().find(item=>item.id===d.id).color,'#cb748c');
   assert.equal(store.listDebts().find(item=>item.id===d.id).installments_remaining,4);
@@ -127,7 +127,7 @@ test('migração v7 preserva parcelas, saldos e cores padrão ao reabrir', () =>
     assert.equal(store.list('2026-09').monthlyDebts[0].scheduled,10000);
     store.payDebt(1,{amount:10000,date:'2026-09-24'});
     store.close();store=openDatabase(file);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,14);
     assert.equal(store.listDebts()[0].remaining,10000);
     assert.equal(store.listDebts()[0].payments.length,1);
   } finally {

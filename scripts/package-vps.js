@@ -9,7 +9,7 @@ process.umask(0o077);
 const name = `persona-vps-${new Date().toISOString().replace(/[:.]/g, '-')}`;
 const output = join(projectRoot, 'dist'), stage = join(output, name);
 mkdirSync(stage, { recursive: true, mode: 0o700 });
-const entries = ['package.json', 'server.js', 'lib', 'public', 'scripts', 'deploy', 'test', 'support', 'Dockerfile', 'compose.yaml', '.env.example', '.dockerignore', '.gitattributes', '.gitignore', 'README.md', 'VPS.md'];
+const entries = ['package.json', 'server.js', 'lib', 'public', 'scripts', 'deploy', 'test', 'support', 'Dockerfile', 'compose.yaml', '.env.example', '.dockerignore', '.gitattributes', '.gitignore', 'README.md', 'VPS.md', 'CHAT.md'];
 for (const entry of entries) cpSync(join(projectRoot, entry), join(stage, entry), { recursive: true });
 const snapshotRoot = join(stage, '.snapshot');
 const snapshot = await createSnapshot({ outputDir: snapshotRoot });

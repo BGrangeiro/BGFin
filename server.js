@@ -6,15 +6,20 @@ import { openDatabase, AppError } from './lib/database.js';
 import { createDailyVerse } from './lib/verse.js';
 import { createQuiz } from './lib/quiz.js';
 import { createAuth } from './lib/auth.js';
+import { createChatService } from './lib/chat.js';
+import { createAiProvider } from './lib/ai.js';
+import { createAiSettings } from './lib/ai-settings.js';
 import { runtimeConfig, loadAccounts, validateRequestOrigin, clientAddress } from './lib/config.js';
 import { databaseFiles } from './lib/data-paths.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
-export function createApp({ databasePath = process.env.DB_PATH || resolve(root, 'data', 'saldo.sqlite'), dailyVerse = createDailyVerse(), quiz = createQuiz(), config = runtimeConfig(), auth = createAuth({ accounts: loadAccounts(config.accountsFile), secureCookies: config.secureCookies, clientAddress: req => clientAddress(req, config) }) } = {}) {
+export function createApp({ databasePath = process.env.DB_PATH || resolve(root, 'data', 'saldo.sqlite'), dailyVerse = createDailyVerse(), quiz = createQuiz(), aiProvider = createAiProvider({AppError}), aiProviderFactory, config = runtimeConfig(), auth = createAuth({ accounts: loadAccounts(config.accountsFile), secureCookies: config.secureCookies, clientAddress: req => clientAddress(req, config) }) } = {}) {
   // Preserve all existing records as Bruno's workspace; Ana gets her own database.
   const primaryStore = openDatabase(databasePath);
   const filesByUser = databaseFiles(databasePath);
   const stores = new Map([['bruno', primaryStore]]);
+  const aiSettings=createAiSettings({directory:databasePath===':memory:'?null:resolve(dirname(databasePath),'ai-config'),fallback:aiProvider,AppError,providerFactory:aiProviderFactory});
+  const chat = createChatService({getProvider:id=>aiSettings.provider(id),AppError});
   function userStore(id) {
     if (!['bruno', 'ana'].includes(id)) throw new AppError('Conta não autorizada.', 403);
     if (!stores.has(id)) {
@@ -49,6 +54,9 @@ export function createApp({ databasePath = process.env.DB_PATH || resolve(root, 
       if (path === '/api/auth/session' && req.method === 'GET') return send(res, 200, { user: currentUser });
       if (path === '/login' && currentUser && ['GET', 'HEAD'].includes(req.method)) { res.writeHead(303, { Location: '/', 'Cache-Control': 'no-store' }); return res.end(); }
       const store = currentUser ? userStore(currentUser.id) : null;
+      if (path === '/api/chat' && req.method === 'GET') return send(res,200,{status:chat.status(currentUser.id),messages:store.chat.list()});
+      if (path === '/api/chat/config' && req.method === 'POST') return send(res,200,{status:await aiSettings.configure(currentUser.id,await body(req,4096))});
+      if (path === '/api/chat' && req.method === 'POST') return send(res,201,await chat.send(store,currentUser.id,await body(req,16384)));
       if (path === '/api/verse' && req.method === 'GET') return send(res, 200, await dailyVerse());
       if (path === '/api/quiz' && req.method === 'GET') return send(res, 200, await quiz());
       if (path === '/api/state' && req.method === 'GET') return send(res, 200, store.list(url.searchParams.get('month')));
@@ -108,7 +116,7 @@ export function createApp({ databasePath = process.env.DB_PATH || resolve(root, 
       if (bill && req.method === 'PUT') return send(res, 200, store.updateBill(Number(bill[1]), await body(req)));
       if ((tx || bill) && req.method === 'DELETE') { if (tx) store.deleteTransaction(Number(tx[1])); else store.deleteBill(Number(bill[1])); return send(res, 200, { ok: true }); }
       if (path.startsWith('/api/')) throw new AppError('Operação não encontrada.', 404);
-      const files = { '/login': 'login.html', '/login.js': 'login.js', '/login.css': 'login.css', '/schedule.js':'schedule.js', '/schedule-model.js':'schedule-model.js', '/schedule.css':'schedule.css', '/study-model.js':'study-model.js', '/study-reviews.js':'study-reviews.js', '/studies.css':'studies.css', '/navigation.js':'navigation.js', '/fitness.js':'fitness.js', '/fitness-model.js':'fitness-model.js', '/fitness.css':'fitness.css', '/debts-model.js': 'debts-model.js', '/debts.css': 'debts.css', '/personal-library.js': 'personal-library.js', '/personal.js': 'personal.js', '/date-picker.js': 'date-picker.js', '/responsive.css': 'responsive.css', '/': currentUser ? 'index.html' : 'login.html', '/app.js': 'app.js', '/investments.js': 'investments.js', '/investments-model.js': 'investments-model.js', '/investments.css': 'investments.css', '/notes.js': 'notes.js', '/notes-model.js': 'notes-model.js', '/period.js': 'period.js', '/styles.css': 'styles.css', '/notes.css': 'notes.css', '/favicon.svg': 'favicon.svg' };
+      const files = { '/chat-voice.js':'chat-voice.js', '/chat.js':'chat.js', '/chat.css':'chat.css', '/login': 'login.html', '/login.js': 'login.js', '/login.css': 'login.css', '/schedule.js':'schedule.js', '/schedule-model.js':'schedule-model.js', '/schedule.css':'schedule.css', '/study-model.js':'study-model.js', '/study-reviews.js':'study-reviews.js', '/studies.css':'studies.css', '/navigation.js':'navigation.js', '/fitness.js':'fitness.js', '/fitness-model.js':'fitness-model.js', '/fitness.css':'fitness.css', '/debts-model.js': 'debts-model.js', '/debts.css': 'debts.css', '/personal-library.js': 'personal-library.js', '/personal.js': 'personal.js', '/date-picker.js': 'date-picker.js', '/responsive.css': 'responsive.css', '/': currentUser ? 'index.html' : 'login.html', '/app.js': 'app.js', '/investments.js': 'investments.js', '/investments-model.js': 'investments-model.js', '/investments.css': 'investments.css', '/notes.js': 'notes.js', '/notes-model.js': 'notes-model.js', '/period.js': 'period.js', '/styles.css': 'styles.css', '/notes.css': 'notes.css', '/favicon.svg': 'favicon.svg' };
       if (!files[path] || !['GET','HEAD'].includes(req.method)) throw new AppError('Página não encontrada.', 404);
       const data = await readFile(resolve(root, 'public', files[path]));
       const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };

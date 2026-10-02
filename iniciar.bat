@@ -12,5 +12,5 @@ echo Persona - controle financeiro.
 echo Abra http://127.0.0.1:3000 no navegador.
 echo Mantenha esta janela aberta enquanto usa o sistema.
 echo.
-node server.js
+node --env-file-if-exists=.env server.js
 pause

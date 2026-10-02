@@ -48,7 +48,7 @@ test('Pessoal: rejeita ordens incompletas, duplicadas ou inválidas sem alterar 
 });
 test('Pessoal: backup completo e legado, validação atômica',t=>{
   const s=fixture(t);s.personal.add(record(s.personal.list().tabs[0].id));
-  const backup=s.exportData();assert.equal(backup.version,12);
+  const backup=s.exportData();assert.equal(backup.version,14);
   s.personal.addTab({name:'Saúde'});s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
   const invalid=structuredClone(backup);invalid.personal.items[0].tab_id=999;assert.throws(()=>s.restoreData(invalid));assert.deepEqual(s.personal.list(),backup.personal);
   const old={...backup,version:5};delete old.personal;s.restoreData(old);assert.deepEqual(s.personal.list(),backup.personal);

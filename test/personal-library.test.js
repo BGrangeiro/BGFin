@@ -47,7 +47,7 @@ test('backup v7 restaura pastas, estudos, estado assistido e resenhas; rejeita v
   const s=setup(t),movies=tab(s,'movies'),studies=tab(s,'studies');const f=s.personal.addFolder({tab_id:movies,name:'Terror'});
   s.personal.add({tab_id:movies,title:'Filme',watched:true,review:'Muito bom',folder_id:f.id});
   s.personal.add({tab_id:studies,title:'Estudo',start_date:'2026-10-01',due_date:'2026-10-02',links:['https://example.org']});
-  const backup=s.exportData();assert.equal(backup.version,12);s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
+  const backup=s.exportData();assert.equal(backup.version,14);s.restoreData(backup);assert.deepEqual(s.personal.list(),backup.personal);
   const bad=structuredClone(backup);bad.personal.items.find(i=>i.tab_id===studies).folder_id=f.id;assert.throws(()=>s.restoreData(bad));assert.deepEqual(s.personal.list(),backup.personal);
   const old=structuredClone(backup);old.version=6;delete old.personal.folders;for(const t of old.personal.tabs)delete t.layout;for(const i of old.personal.items){delete i.folder_id;delete i.watched;delete i.review;delete i.start_date;delete i.links;}s.restoreData(old);assert.equal(s.personal.list().items.length,2);assert.equal(s.personal.list().tabs.find(t=>t.id===movies).layout,'movies');
 });

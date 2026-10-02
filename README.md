@@ -47,6 +47,18 @@ Consulte [VPS.md](VPS.md) para instalar com Docker Compose, HTTPS automático, b
 - Backup JSON com todos os meses e restauração validada e atômica.
 - Layout responsivo e botão para ocultar visualmente os valores.
 
+## Treino e alimentação
+
+Em **Pessoal → Treino e alimentação**, os treinos ficam no calendário semanal. Arraste a alça de um cartão para mudar o dia ou marque **Fui** para registrar a presença. **Ver ficha** abre todos os exercícios, séries, repetições previstas, carga utilizada e repetições realizadas, além de descanso, RIR, observações e links de vídeo.
+
+Em **Editar treino → Plano e orientações**, registre o nome do plano, a etapa, o objetivo da semana e as orientações completas. O objetivo aparece acima do calendário; **Orientações do plano** permite consultar a progressão e os exemplos sem entrar no formulário. Esses campos são opcionais e ficam no banco da conta, inclusive nos backups. Os dados de desempenho são próprios de cada sessão e não aumentam a carga automaticamente.
+
+## Assistente e alimentação pelo chat
+
+Com a IA ativa, relatos de comida e bebida são registrados automaticamente em Alimentação. O chat e o cartão mostram proteínas e carboidratos estimados em gramas, com as porções consideradas. Quando não há quantidade, a porção presumida fica explícita. O botão **Ditar** preenche a mensagem por voz nos navegadores compatíveis; revise e envie normalmente. Valores, porções e histórico persistem no banco e nos backups.
+
+O botão **Assistente** abre o chat com histórico separado por conta. Já é possível registrar refeições pelo modo local, sem IA: escreva `comi arroz e frango hoje às 12:30` ou selecione **Anotar refeição**. Para ativar a conversa com IA, abra **Ativar IA com minha chave**, cole sua chave da Groq e use **Testar e ativar IA**. O servidor testa a conexão antes de salvar e ativa sem reiniciar. A chave é individual, não é devolvida pela API nem incluída nos backups. Com a IA ativa, o assistente consulta dados da sua conta e cadastra em Finanças, Investimentos, Anotações e Pessoal, incluindo perguntas, exercícios e horários. Cada ação salva mostra um comprovante. O backup v14 inclui mensagens, refeições e comprovantes. Detalhes e alternativa por variáveis de ambiente em [CHAT.md](CHAT.md).
+
 ## Investimentos
 
 Use **Adicionar investimento** para cadastrar o nome, tipo, instituição, código/ticker, data inicial e aporte inicial opcional. A carteira aceita investimentos anteriores ao início dos períodos financeiros, a partir de 2000. Todos os valores são informados manualmente em reais; não há integração com corretoras ou cotações automáticas.

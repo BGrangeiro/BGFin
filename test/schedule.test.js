@@ -40,7 +40,7 @@ test('valida cronogramas e evita sobrescrever uma versão alterada por outra jan
 
 test('backup v12 preserva padrões e exceções, rejeita duplicação atomicamente e migra v11',t=>{
  const store=setup(t);save(store,'template',base);save(store,'exception',moveScheduleTime(base,'study','14:00'));
- const backup=store.exportData();assert.equal(backup.version,12);store.restoreData(backup);assert.deepEqual(store.personal.list(),backup.personal);
+ const backup=store.exportData();assert.equal(backup.version,14);store.restoreData(backup);assert.deepEqual(store.personal.list(),backup.personal);
  const duplicate=structuredClone(backup);duplicate.personal.items.push({...duplicate.personal.items[0],id:999});assert.throws(()=>store.restoreData(duplicate),/duplicados/);assert.deepEqual(store.personal.list(),backup.personal);
  const invalid=structuredClone(backup);invalid.personal.items[0].blocks[0].color='javascript:bad';assert.throws(()=>store.restoreData(invalid));assert.deepEqual(store.personal.list(),backup.personal);
  const old=structuredClone(backup);old.version=11;old.personal.items=[];old.personal.tabs=old.personal.tabs.filter(tab=>tab.layout!=='schedule');store.restoreData(old);assert.equal(store.personal.list().tabs.filter(tab=>tab.layout==='schedule').length,1);assert.deepEqual(read(store).blocks,[]);

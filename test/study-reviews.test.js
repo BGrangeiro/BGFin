@@ -69,7 +69,7 @@ test('filtros e agenda só mostram a próxima revisão pendente no horário loca
 
 test('backup v10 preserva perguntas e revisões, v9 migra sem criar revisões automaticamente',t=>{
   const store=setup(t),item=store.personal.add(fixture(store));store.personal.reviewStudy(item.id,{action:'complete',stage:0});
-  const backup=store.exportData();assert.equal(backup.version,12);store.restoreData(backup);assert.deepEqual(store.personal.list(),backup.personal);
+  const backup=store.exportData();assert.equal(backup.version,14);store.restoreData(backup);assert.deepEqual(store.personal.list(),backup.personal);
   const bad=structuredClone(backup);bad.personal.items[0].study_reviews[0]='2001-01-01T12:00:00.000Z';assert.throws(()=>store.restoreData(bad));assert.deepEqual(store.personal.list(),backup.personal);
   const old=structuredClone(backup);old.version=9;for(const key of ['studied_at','questions','study_reviews','study_periods'])delete old.personal.items[0][key];store.restoreData(old);
   const migrated=store.personal.list().items[0];assert.equal(migrated.studied_at,null);assert.deepEqual(migrated.questions,[]);assert.deepEqual(migrated.study_reviews,[]);assert.equal(migrated.title,item.title);

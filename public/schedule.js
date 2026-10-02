@@ -95,5 +95,5 @@ export function createSchedulePanel({getData,getTab,api,icon,escape,show,toast,t
     const handle=event.target.closest('[data-schedule-drag]');if(!handle||busy||!event.altKey||!['ArrowUp','ArrowDown'].includes(event.key))return;
     event.preventDefault();const items=blocks(),index=items.findIndex(block=>block.id===handle.dataset.scheduleDrag),next=items[index+(event.key==='ArrowUp'?-1:1)];if(next)move(items[index].id,next.id);
   });
-  return {render,edit,afterRender(){const timeline=document.querySelector('.schedule-timeline');if(!timeline)return;const key=`${getTab().id}:${mode}:${selectedDate}`;if(scrollKey===key)timeline.scrollTop=scrollTop;else{scrollKey=key;scrollTop=0;timeline.scrollTop=0;}}};
+  return {render,edit,openDate(date,scope){selectedDate=date;mode=scope||"exception";},afterRender(){const timeline=document.querySelector('.schedule-timeline');if(!timeline)return;const key=`${getTab().id}:${mode}:${selectedDate}`;if(scrollKey===key)timeline.scrollTop=scrollTop;else{scrollKey=key;scrollTop=0;timeline.scrollTop=0;}}};
 }

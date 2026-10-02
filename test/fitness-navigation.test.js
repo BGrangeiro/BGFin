@@ -43,13 +43,35 @@ test('validação protege datas, exercícios, vídeos e registros de alimentaç�
   assert.deepEqual(store.personal.list().items[0],item);
 });
 
+test('ficha mantém plano e desempenho ao mover, marcar presença, editar e restaurar backup',t=>{
+  const store=fixture(t),item=store.personal.add(workout(store,{
+    plan_name:'Hipertrofia · 5x por semana',week_label:'Semana 0',week_goal:'Descobrir as cargas-base.',
+    workout_guidance:'Progressão dupla\nPrimeiro repetições, depois carga.\n\nDescanso\nCompostos: 2-3 minutos.',
+    exercises:[{name:'Agachamento livre',sets:'4',reps:'6-8',load:'80 kg',performed_reps:'8 / 7 / 7 / 6',rest:'2-3 min',rir:'2',notes:'Boa amplitude.'}]
+  }));
+  const moved=store.personal.update(item.id,{completed:true,due_date:'2026-10-01'});
+  for(const key of ['plan_name','week_label','week_goal','workout_guidance','exercises'])assert.deepEqual(moved[key],item[key]);
+  const edited=store.personal.update(item.id,{exercises:[{...item.exercises[0],performed_reps:'8 / 8 / 7 / 7'}]});
+  assert.equal(edited.exercises[0].reps,'6-8');assert.equal(edited.exercises[0].load,'80 kg');
+  assert.equal(edited.workout_guidance,item.workout_guidance);
+  const backup=store.exportData();store.restoreData(backup);assert.deepEqual(store.personal.list().items[0],edited);
+  for(const change of [{plan_name:[]},{week_goal:'x'.repeat(2001)},{workout_guidance:'x'.repeat(20001)},
+    {exercises:[{name:'Agachamento',performed_reps:12}]},{exercises:[{name:'Agachamento',rest:{}}]}])assert.throws(()=>store.personal.update(item.id,change));
+  assert.deepEqual(store.personal.list().items[0],edited);
+  const legacy=structuredClone(backup),old=legacy.personal.items[0];
+  for(const key of ['plan_name','week_label','week_goal','workout_guidance'])delete old[key];
+  for(const key of ['performed_reps','rest','rir'])delete old.exercises[0][key];
+  store.restoreData(legacy);const restored=store.personal.list().items[0];
+  assert.equal(restored.title,item.title);assert.equal(restored.workout_guidance,'');assert.equal(restored.exercises[0].performed_reps,'');
+});
+
 test('ordem principal e treinos persistem na reabertura e migração v8 é aplicada uma vez',()=>{
   const directory=mkdtempSync(join(tmpdir(),'persona-fitness-')),file=join(directory,'test.sqlite');let store;
   try{
     store=openDatabase(file);
     const fitness=fitnessId(store);store.personal.removeTab(fitness);store.db.exec('PRAGMA user_version=8;');store.close();
     store=openDatabase(file);assert.equal(store.personal.list().tabs.filter(tab=>tab.layout==='fitness').length,1);
-    const item=store.personal.add(workout(store));
+    const item=store.personal.add(workout(store,{plan_name:'Plano pessoal',week_label:'Semana 1',week_goal:'Repetições',workout_guidance:'Instruções do plano',exercises:[{name:'Agachamento',performed_reps:'8 / 7',rest:'2 min',rir:'2'}]}));
     const defaults=store.preferences.list(),prefs=store.preferences.update({navigation:[...defaults.navigation].reverse(),workspaces:[...defaults.workspaces].reverse()});
     store.close();store=openDatabase(file);
     assert.deepEqual(store.preferences.list(),prefs);assert.deepEqual(store.personal.list().items[0],item);
@@ -62,7 +84,7 @@ test('ordem principal e treinos persistem na reabertura e migração v8 é aplic
 test('backup v9 restaura treinos, refeições, presença e ordem; corrupção é rejeitada atomicamente',t=>{
   const store=fixture(t);store.personal.add(workout(store,{completed:true}));store.personal.add(workout(store,{record_type:'meal',notes:'Banana e iogurte'}));
   const order=store.preferences.list().navigation.reverse();store.preferences.update({navigation:order});
-  const backup=store.exportData();assert.equal(backup.version,12);
+  const backup=store.exportData();assert.equal(backup.version,14);
   store.restoreData(backup);assert.deepEqual(store.personal.list(),backup.personal);assert.deepEqual(store.preferences.list(),backup.preferences);
   for(const corrupt of [copy=>copy.preferences.navigation=['debts'],copy=>copy.personal.items[0].due_date='2026-02-30',copy=>copy.personal.items[1].exercises=[{name:'X',video_url:'data:text/html,bad'}]]){
     const copy=structuredClone(backup);corrupt(copy);assert.throws(()=>store.restoreData(copy));assert.deepEqual(store.personal.list(),backup.personal);assert.deepEqual(store.preferences.list(),backup.preferences);
@@ -87,8 +109,9 @@ test('API salva preferências, treino e refeição, serve recursos e mantém pro
   const {server,fetch}=createApp({databasePath:':memory:'});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
   const base=`http://127.0.0.1:${server.address().port}`,send=(path,method='GET',body)=>fetch(base+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
   const personal=await(await send('/api/personal')).json(),tab_id=personal.tabs.find(tab=>tab.layout==='fitness').id;
-  const created=await send('/api/personal/items','POST',{tab_id,title:'Corrida',record_type:'workout',due_date:'2026-09-24',exercises:[{name:'Corrida',reps:'30 min'}]});assert.equal(created.status,201);const item=await created.json();
+  const created=await send('/api/personal/items','POST',{tab_id,title:'Corrida',record_type:'workout',due_date:'2026-09-24',plan_name:'Plano pessoal',week_label:'Semana 0',week_goal:'Carga-base',workout_guidance:'Texto <script>sem executar</script>',exercises:[{name:'Corrida',reps:'30 min',performed_reps:'25 min',rest:'1 min',rir:'2'}]});assert.equal(created.status,201);const item=await created.json();
   assert.equal((await send(`/api/personal/items/${item.id}`,'PUT',{completed:true,due_date:'2026-09-26'})).status,200);
+  const saved=(await(await send('/api/personal')).json()).items.find(row=>row.id===item.id);assert.equal(saved.workout_guidance,item.workout_guidance);assert.equal(saved.exercises[0].performed_reps,'25 min');
   const prefs=await(await send('/api/preferences')).json();prefs.navigation.reverse();assert.equal((await send('/api/preferences','PUT',prefs)).status,200);
   const state=await(await send('/api/state?month=2026-09')).json();assert.deepEqual(state.preferences,prefs);
   assert.equal((await fetch(base+'/api/preferences',{method:'PUT',headers:{'Content-Type':'application/json',Origin:'https://example.com'},body:JSON.stringify(prefs)})).status,403);

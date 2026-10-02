@@ -73,7 +73,7 @@ test('backup v5 valida carteira antes de restaurar, recalcula totais e reverte f
   const store = fixture(t), api = store.investments, i = api.add(investment());
   api.addEntry(i.id, entry('gain', 1234));
   const original = store.exportData();
-  assert.equal(original.version,12);
+  assert.equal(original.version,14);
   api.remove(i.id); store.restoreData(original);
   assert.deepEqual(api.list(), original.investments);
   const badVariants = [
@@ -116,7 +116,7 @@ test('migração v4 e reabertura mantêm finanças, notas e histórico de invest
     store = openDatabase(path);
     assert.equal(store.list('2026-09').totals.income, 500);
     assert.deepEqual(store.investments.get(i.id), expected);
-    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,12);
+    assert.equal(store.db.prepare('PRAGMA user_version').get().user_version,14);
   } finally {
     store?.close();
     const rel = relative(tmpdir(), dir); assert.ok(rel && !rel.startsWith('..') && !isAbsolute(rel)); rmSync(dir, { recursive: true, force: true });

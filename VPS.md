@@ -1,5 +1,7 @@
 # Instalar o Persona na VPS
 
+O chat funciona em modo local sem chave. Para ativar a IA, abra **Assistente → Ativar IA com minha chave** ou consulte [CHAT.md](CHAT.md) para usar variáveis de ambiente. As chaves cadastradas na tela ficam no volume persistente `data/ai-config/`, separadas por conta e fora dos backups e do pacote da VPS. Configure-as novamente ao migrar para outro servidor.
+
 O pacote usa uma VPS Linux com Docker Engine e Docker Compose v2, um domínio apontando para ela e as portas 80/443 livres. O aplicativo, o proxy HTTPS e o serviço de backups reiniciam automaticamente com o Docker. Não é necessário instalar Node.js ou um servidor de banco separado na VPS.
 
 Os dados atuais pertencem a **Bruno**. **Ana** tem seu próprio banco. Os logins existentes continuam funcionando, sem distinguir maiúsculas/minúsculas. Para acesso público, prefira trocar as senhas curtas por senhas longas com o comando descrito abaixo.

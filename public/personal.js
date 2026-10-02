@@ -97,7 +97,7 @@ export function createPersonalPanel({api,icon,escape,cash,parseAmount,amountInpu
   }
   function show(title,subtitle,body,fn,submit='Salvar'){
     mutation=fn;
-    dialog.innerHTML=`<div class="modal-header"><div><h2 id="personal-modal-title">${escape(title)}</h2>${subtitle?`<p>${escape(subtitle)}</p>`:''}</div>${action('close','Fechar','close','','icon-button')}</div><div class="modal-body"><form id="personal-form">${body}<div id="personal-error" class="form-error" role="alert" hidden></div><div class="modal-actions">${action('close','Cancelar','close')}<button class="button primary" type="submit">${submit}</button></div></form></div>`;
+    dialog.innerHTML=`<div class="modal-header"><div><h2 id="personal-modal-title">${escape(title)}</h2>${subtitle?`<p>${escape(subtitle)}</p>`:''}</div>${action('close','Fechar','close','','icon-button')}</div><div class="modal-body"><form id="personal-form">${body}<div id="personal-error" class="form-error" role="alert" hidden></div><div class="modal-actions">${fn?`${action('close','Cancelar','close')}<button class="button primary" type="submit">${submit}</button>`:action('close','Fechar','close','','button primary')}</div></form></div>`;
     dialog.showModal();
   }
   function editItem(item=null){
@@ -131,11 +131,11 @@ export function createPersonalPanel({api,icon,escape,cash,parseAmount,amountInpu
   });
   dialog.addEventListener('cancel',e=>{if(saving)e.preventDefault();});
   dialog.addEventListener('submit',async event=>{
-    event.preventDefault();if(saving)return;saving=true;++request;
+    event.preventDefault();if(!mutation||saving)return;saving=true;++request;
     const button=dialog.querySelector('[type=submit]');button.disabled=true;dialog.querySelector('#personal-error').hidden=true;
     try{await mutation(Object.fromEntries(new FormData(event.target)),event.target);dialog.close();await refresh();onRender();toast('Registro salvo.');}
     catch(e){dialog.querySelector('#personal-error').textContent=e.message;dialog.querySelector('#personal-error').hidden=false;}
     finally{saving=false;button.disabled=false;}
   });
-  return {render,refresh,afterRender:()=>{if(tab()?.layout==='fitness')fitness.afterRender();if(tab()?.layout==='schedule')schedule.afterRender();},agenda:()=>error?[]:data.items.filter(i=>!['movies','schedule'].includes(data.tabs.find(t=>t.id===i.tab_id)?.layout)&&(data.tabs.find(t=>t.id===i.tab_id)?.layout!=='fitness'||(i.record_type==='workout'&&!i.completed))&&i.status==='active'&&i.due_date&&i.due_date<=today()).map(i=>({title:i.title,date:i.due_date,page:'personal',label:data.tabs.find(t=>t.id===i.tab_id)?.name||'Pessoal'})).concat(studyAgenda(data.items,data.tabs)),agendaError:()=>error?'<p class="form-error">Não foi possível carregar os lembretes de Pessoal. Recarregue a página.</p>':''};
+  return {render,refresh,async openRecord(record){await refresh();if(error)throw new Error(error);if(!data.tabs.some(tab=>tab.id===record.tab_id))throw new Error("A aba deste registro não existe mais.");selected=record.tab_id;const item=data.items.find(item=>item.id===record.id);if(item?.record_type==="meal")fitness.openMeals(item.due_date);else if(item?.record_type==="workout")fitness.openWorkouts(item.due_date);else if(item?.schedule_kind&&record.date)schedule.openDate(record.date,item.schedule_kind);},async openMeals(date){await refresh();if(error)throw new Error(error);const target=data.tabs.find(tab=>tab.layout==='fitness');if(!target)throw new Error('A aba de alimentação não está disponível.');selected=target.id;fitness.openMeals(date);},afterRender:()=>{if(tab()?.layout==='fitness')fitness.afterRender();if(tab()?.layout==='schedule')schedule.afterRender();},agenda:()=>error?[]:data.items.filter(i=>!['movies','schedule'].includes(data.tabs.find(t=>t.id===i.tab_id)?.layout)&&(data.tabs.find(t=>t.id===i.tab_id)?.layout!=='fitness'||(i.record_type==='workout'&&!i.completed))&&i.status==='active'&&i.due_date&&i.due_date<=today()).map(i=>({title:i.title,date:i.due_date,page:'personal',label:data.tabs.find(t=>t.id===i.tab_id)?.name||'Pessoal'})).concat(studyAgenda(data.items,data.tabs)),agendaError:()=>error?'<p class="form-error">Não foi possível carregar os lembretes de Pessoal. Recarregue a página.</p>':''};
 }

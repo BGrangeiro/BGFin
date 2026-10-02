@@ -1,4 +1,5 @@
 import { createNavigationOrder } from './navigation.js';
+import { createChat } from './chat.js';
 import { createPersonalPanel } from './personal.js';
 import { initDatePickers } from './date-picker.js';
 import { FIRST_MONTH, FIRST_DATE, periodMonth, periodRange, periodDueDate, shiftMonth } from './period.js';
@@ -40,6 +41,12 @@ const navigationOrder=createNavigationOrder({api,toast});
 const notesPanel=createNotesPanel({api,icon,escape,toast,onRender:()=>render()});
 const investmentsPanel=createInvestmentsPanel({api,icon,escape,cash,parseAmount,amountInput,toast,onRender:()=>render()});
 const personalPanel=createPersonalPanel({api,icon,escape,cash,parseAmount,amountInput,today,onRender:()=>render(),toast});
+icons.chat='<path d="M21 11a8 8 0 0 1-8 8H5l-3 3V5a3 3 0 0 1 3-3h8a8 8 0 0 1 8 9Z"/><path d="M7 8h9M7 12h6"/>';
+createChat({api,icon,escape,today,
+  onSaved:load,
+  onOpenMeal:async date=>{await personalPanel.openMeals(date);page='personal';location.hash='#personal';render();},
+  onOpenRecord:async record=>{if(record.page==='personal')await personalPanel.openRecord(record);page=record.page;location.hash='#'+page;await load();}
+});
 async function load(){
   const id=++requestId;
   $('#load-error').hidden=true;
@@ -123,7 +130,7 @@ function payModal(b){openModal('Marcar como paga',`${escape(b.description)} · $
 let confirmAction=null;
 function confirmModal(title,description,action,label='Excluir'){confirmAction=action;openModal(title,description,`<form id="confirm-form">${formActions(label)}</form>`);}
 document.addEventListener('submit',async event=>{
-  if(event.target.closest('#notes-modal, #investments-modal, #personal-modal'))return;
+  if(!event.target.closest('#modal'))return;
   event.preventDefault();
   if(isSaving)return;
   const form=event.target;
@@ -168,7 +175,7 @@ document.addEventListener('submit',async event=>{
 });
 document.addEventListener('click',event=>{const target=event.target.closest('[data-action]');if(!target)return;const action=target.dataset.action,id=Number(target.dataset.id);if(action==='close')closeModal();else if(action==='new-transaction')transactionModal();else if(action==='new-bill')billModal();else if(action==='edit-transaction')transactionModal(state.transactions.find(t=>t.id===id));else if(action==='edit-bill')billModal(state.bills.find(b=>b.id===id));else if(action==='pay-bill')payModal(state.bills.find(b=>b.id===id));else if(action==='delete-transaction'||action==='undo-payment'){const t=state.transactions.find(t=>t.id===id);confirmModal(action==='undo-payment'?'Desfazer pagamento?':'Excluir lançamento?',t?.debt_id?'A saída será removida e o saldo restante da dívida será recalculado.':t?.bill_id?'A saída será removida e a conta ficará pendente novamente.':'Esse lançamento será removido do seu histórico.',()=>api(`/transactions/${id}`,{method:'DELETE'}),action==='undo-payment'?'Desfazer pagamento':'Excluir lançamento');}else if(action==='delete-bill'){confirmModal('Excluir conta fixa?','A conta deixará de aparecer em todos os meses. As saídas de pagamentos já feitos continuam no histórico.',()=>api(`/bills/${id}`,{method:'DELETE'}),'Excluir conta');}else if(action==='restore')$('#backup-file').click();});
 document.addEventListener('input',event=>{if(event.target.id==='search'){filters.search=event.target.value;$('#transaction-results').innerHTML=transactionResults();}});
-document.addEventListener('change',async event=>{if(event.target.id==='filter-type'||event.target.id==='filter-category'){filters[event.target.id==='filter-type'?'type':'category']=event.target.value;$('#transaction-results').innerHTML=transactionResults();}else if(event.target.id==='backup-file'){const file=event.target.files[0];if(!file)return;try{if(file.size>15*1024*1024)throw new Error('Escolha um arquivo de até 15 MB.');const backup=JSON.parse(await file.text());if(![1,2,3,4,5,6,7,8,9].includes(backup.version)||!Array.isArray(backup.transactions)||!Array.isArray(backup.bills))throw new Error('Este arquivo não é um backup válido do Saldo.');confirmModal('Restaurar este backup?',`Isso substituirá os dados financeiros por ${backup.transactions.length} lançamentos, ${backup.bills.length} contas fixas e ${backup.debts?.length||0} dívidas. ${backup.version>=4?`Também substituirá todas as anotações por ${backup.notes?.length||0} registros.`:`Este backup antigo preservará suas anotações atuais.`} ${backup.version>=5?`Também substituirá a carteira por ${backup.investments?.length||0} investimentos e seus históricos.`:`Este backup antigo preservará seus investimentos atuais.`} ${backup.version>=6?`Também substituirá as abas e os registros de Pessoal, incluindo treinos e alimentação.`:``} ${backup.version>=9?`A ordem das abas principais também será restaurada.`:``} Baixe uma cópia dos dados atuais antes de continuar.`,()=>api('/restore',{method:'POST',body:JSON.stringify(backup)}),'Substituir e restaurar');}catch(error){toast(error.message,true);}event.target.value='';}});
+document.addEventListener('change',async event=>{if(event.target.id==='filter-type'||event.target.id==='filter-category'){filters[event.target.id==='filter-type'?'type':'category']=event.target.value;$('#transaction-results').innerHTML=transactionResults();}else if(event.target.id==='backup-file'){const file=event.target.files[0];if(!file)return;try{if(file.size>15*1024*1024)throw new Error('Escolha um arquivo de até 15 MB.');const backup=JSON.parse(await file.text());if(![1,2,3,4,5,6,7,8,9,10,11,12,13,14].includes(backup.version)||!Array.isArray(backup.transactions)||!Array.isArray(backup.bills))throw new Error('Este arquivo não é um backup válido do Saldo.');confirmModal('Restaurar este backup?',`Isso substituirá os dados financeiros por ${backup.transactions.length} lançamentos, ${backup.bills.length} contas fixas e ${backup.debts?.length||0} dívidas. ${backup.version>=4?`Também substituirá todas as anotações por ${backup.notes?.length||0} registros.`:`Este backup antigo preservará suas anotações atuais.`} ${backup.version>=5?`Também substituirá a carteira por ${backup.investments?.length||0} investimentos e seus históricos.`:`Este backup antigo preservará seus investimentos atuais.`} ${backup.version>=6?`Também substituirá as abas e os registros de Pessoal, incluindo treinos e alimentação.`:``} ${backup.version>=9?`A ordem das abas principais também será restaurada.`:``} ${backup.version>=13?`O histórico do assistente também será substituído pelo histórico do backup.`:``} Baixe uma cópia dos dados atuais antes de continuar.`,()=>api('/restore',{method:'POST',body:JSON.stringify(backup)}),'Substituir e restaurar');}catch(error){toast(error.message,true);}event.target.value='';}});
 $('#new-transaction').addEventListener('click',()=>{if(state)transactionModal();});
 $('#month').addEventListener('change',event=>{const value=event.target.value;if(/^20\d{2}-(0[1-9]|1[0-2])$/.test(value)&&value>=FIRST_MONTH){month=value;load();}else{event.target.value=month;toast('O sistema começa em setembro de 2026.',true);}});
 function changeMonth(delta){const next=shiftMonth(month,delta);if(next<FIRST_MONTH||next>'2099-12')return;month=next;load();}
